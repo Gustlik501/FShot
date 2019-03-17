@@ -17,7 +17,7 @@ namespace FShot
         private static DiscordClient discord;
         private static DiscordChannel channel;
         private static DiscordUser user;
-        private static List<String> messages;
+        private static List<String> lines;
         private static Random rand;
 
 
@@ -27,18 +27,15 @@ namespace FShot
                 Token = token,
                 TokenType = TokenType.Bot
             });
-            messages = new List<string>();
             StreamReader sr = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config.cfg"));
-            channel = discord.GetChannelAsync(Convert.ToUInt64(sr.ReadLine().Split(' ')[1])).Result;
-            user = discord.GetUserAsync(Convert.ToUInt64(sr.ReadLine().Split(' ')[1])).Result;
-            rand = new Random();
-            sr.ReadLine();
+            lines = new List<string>();
             string line;
-            while ((line = sr.ReadLine()) != "}") {
-                if (!line.StartsWith("//")) messages.Add(line);
-
-            }
+            while ((line = sr.ReadLine()) != null)
+                if (!line.StartsWith("//")) lines.Add(line);
             sr.Close();
+            channel = discord.GetChannelAsync(Convert.ToUInt64(lines.ElementAt(0).Split(' ')[1])).Result;
+            user = discord.GetUserAsync(Convert.ToUInt64(lines.ElementAt(1).Split(' ')[1])).Result;
+            rand = new Random();
 
             await discord.ConnectAsync();
             await Task.Delay(-1);
@@ -51,13 +48,14 @@ namespace FShot
             MemoryStream stream = new MemoryStream();
             screenShot.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
             stream.Position = 0;
-            string message = messages.ElementAt(rand.Next(messages.Count));
+            string message = lines.ElementAt(rand.Next(3, lines.Count - 1));
             message = message.Replace("@User", user.Mention);
             if (Screen.isActiveWindowFullscreen()) message = message.Replace("@Game", "Game: " + Screen.getActiveWindowTitle());
             else message = message.Replace("@Game", "");
             channel.SendFileAsync(stream, "screenshot.png", message);
         }
 
-    }//254303224985550848
+    }
 
 }
+
